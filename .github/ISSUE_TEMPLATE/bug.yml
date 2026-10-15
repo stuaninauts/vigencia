@@ -1,0 +1,24 @@
+name: Bug
+description: Comportamento errado do pipeline, do índice ou das respostas
+title: "fix: "
+labels: [bug]
+body:
+  - type: textarea
+    id: o-que-aconteceu
+    attributes:
+      label: O que aconteceu
+      description: Pergunta ou comando, resposta obtida e resposta esperada (com a fonte que prova).
+    validations:
+      required: true
+  - type: dropdown
+    id: etapa
+    attributes:
+      label: Etapa suspeita
+      options: [ingestão, parsing, chunking, retrieval, geração, catálogo/SQL, agente, infra, não sei]
+    validations:
+      required: true
+  - type: textarea
+    id: reproduzir
+    attributes:
+      label: Como reproduzir
+      render: shell

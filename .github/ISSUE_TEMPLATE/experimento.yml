@@ -1,0 +1,38 @@
+name: Experimento
+description: Hipótese a testar contra o golden set (uma variável por vez)
+title: "exp: "
+labels: [experimento]
+body:
+  - type: textarea
+    id: hipotese
+    attributes:
+      label: Hipótese
+      description: O que você espera que melhore, em quais tipos de pergunta e por quê.
+    validations:
+      required: true
+  - type: input
+    id: variavel
+    attributes:
+      label: Variável
+      description: "A única coisa que muda em relação ao baseline (ex.: chunking por seção em vez de tamanho fixo)."
+    validations:
+      required: true
+  - type: input
+    id: baseline
+    attributes:
+      label: Baseline
+      description: Config ou experimento atual de referência.
+    validations:
+      required: true
+  - type: textarea
+    id: metricas
+    attributes:
+      label: Métricas e critério de sucesso
+      description: "Ex.: recall@5 nas perguntas temporais sobe ao menos 5 pontos sem piorar p95 de latência."
+    validations:
+      required: true
+  - type: input
+    id: custo
+    attributes:
+      label: Custo estimado
+      description: Chamadas de API pagas e tempo limite do experimento.

@@ -1,0 +1,54 @@
+[project]
+name = "vigencia"
+version = "0.1.0"
+description = "RAG lab over NF-e technical notes during Brazil's consumption tax reform: which rule is in force on a given date."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "mypy>=2.4.0",
+    "pre-commit>=4.7.0",
+    "pytest>=9.1.1",
+    "ruff>=0.17.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.11.11,<0.12"]
+build-backend = "uv_build"
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W",  # pycodestyle
+    "F",       # pyflakes
+    "I",       # isort
+    "B",       # bugbear
+    "UP",      # pyupgrade
+    "SIM",     # simplify
+    "PTH",     # pathlib em vez de os.path
+    "S",       # bandit (segurança)
+    "T20",     # sem print em código de biblioteca
+    "RUF",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101"]  # assert é o idioma do pytest
+
+[tool.mypy]
+strict = true
+files = ["src", "tests"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["-ra", "--strict-markers", "--strict-config"]
+markers = [
+    "network: acessa a internet (portal NF-e etc.)",
+    "eval: chama LLM pago ou roda avaliação cara",
+    "slow: demora mais que alguns segundos",
+]

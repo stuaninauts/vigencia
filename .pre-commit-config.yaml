@@ -1,0 +1,56 @@
+# Instalado por `make setup` (pre-commit e commit-msg). Ferramentas Python rodam via `uv run`,
+# então a versão vem do uv.lock (uma fonte de verdade só). gitleaks é binário no PATH (v8.x).
+default_install_hook_types: [pre-commit, commit-msg]
+default_stages: [pre-commit]
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: no-commit-to-branch
+        args: [--branch, main]
+      - id: check-added-large-files
+        args: [--maxkb=500]
+      - id: check-merge-conflict
+      - id: check-toml
+      - id: check-yaml
+      - id: check-json
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      - id: detect-private-key
+
+  - repo: local
+    hooks:
+      - id: gitleaks
+        name: gitleaks (segredos)
+        entry: gitleaks git --pre-commit --redact --staged --verbose
+        language: system
+        pass_filenames: false
+      - id: ruff-check
+        name: ruff check
+        entry: uv run ruff check --fix
+        language: system
+        types: [python]
+      - id: ruff-format
+        name: ruff format
+        entry: uv run ruff format
+        language: system
+        types: [python]
+      - id: mypy
+        name: mypy
+        entry: uv run mypy
+        language: system
+        types: [python]
+        pass_filenames: false
+      - id: no-em-dash
+        name: sem travessão longo
+        entry: scripts/check-no-em-dash.sh
+        language: script
+        types: [text]
+      - id: conventional-commit
+        name: Conventional Commits
+        entry: scripts/check-commit-msg.sh
+        language: script
+        stages: [commit-msg]

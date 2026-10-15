@@ -1,0 +1,34 @@
+.DEFAULT_GOAL := help
+.PHONY: help setup fmt lint typecheck test test-all hooks-test check ci
+
+help: ## lista os alvos
+	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-11s %s\n", $$1, $$2}'
+
+setup: ## instala dependências e git hooks (uma vez após clonar)
+	uv sync
+	uv run pre-commit install
+
+fmt: ## formata e corrige o que o ruff consegue
+	uv run ruff format
+	uv run ruff check --fix
+
+lint: ## lint e formatação sem alterar arquivos
+	uv run ruff check
+	uv run ruff format --check
+
+typecheck: ## mypy strict
+	uv run mypy
+
+test: ## testes rápidos (sem rede e sem LLM)
+	uv run pytest -m "not network and not eval"
+
+test-all: ## todos os testes, inclusive rede e LLM
+	uv run pytest
+
+hooks-test: ## testes dos guardrails do Claude Code e dos scripts de hook
+	bash .claude/hooks/test-guard-bash.sh
+	bash scripts/test-hooks.sh
+
+check: lint typecheck test hooks-test ## tudo que precisa passar antes de concluir
+
+ci: check ## alias usado pelo GitHub Actions

@@ -1,0 +1,29 @@
+# contexto pessoal (não versionar)
+CLAUDE.local.md
+notas/
+
+# dados brutos e derivados pesados
+data/
+*.pdf
+
+# python
+.venv/
+__pycache__/
+*.pyc
+
+# segredos
+.env
+.env.*
+!.env.example
+
+# claude code (pessoal)
+.claude/settings.local.json
+.claude/worktrees/
+
+# caches de ferramentas
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
