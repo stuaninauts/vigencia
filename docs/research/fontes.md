@@ -11,7 +11,14 @@ Testes feitos com curl em 2026-10-14. Reteste antes de construir em cima.
 - Download: `exibirArquivo.aspx?conteudo=<id>` devolve `application/pdf`. NT 2025.002 v1.52: 2,1 MB, 94 páginas.
 - `pdftotext -layout` extrai bem: ~40 mil palavras, tabela "Histórico de Alterações / Cronograma" (implantação
   em homologação e em produção), tabelas de leiaute e anexos cClassTrib e cClassTribIS.
-- Atenção: alguns ids de conteúdo têm espaços no HTML; normalizar antes de montar a URL.
+- A lista tem duas seções: "Documentos vigentes" (107) e "Documentos não vigentes" (213), em 2026-10-18. Só a
+  última versão de cada NT fica em vigentes (NT 2025.002: v1.52 vigente, v1.00 a v1.51 não vigentes).
+- Títulos trazem relações explícitas: "(substituída pela NT 2009.006)", prefixo "RT" (reforma tributária),
+  "NFC-e", "Conjunta". O número não é chave: existem "NT 2025.001" e "NT Conjunta 2025.001".
+- Sujeira real tratada em `src/vigencia/portal.py`: espaço não separável no título; o `+` do id em base64 aparece
+  como espaço no HTML, inclusive no início (`" WTd7iuD21s="` é `+WTd7iuD21s=`).
+- O portal aceita User-Agent que identifica o projeto (`vigencia/0.1 (+github...)`), sem fingir navegador.
+- Corpus da fase 1 (`vigencia baixar`, padrão: vigentes publicados desde 2025-01-01): 24 documentos, 531 páginas, 22 MB.
 
 ## LC 214/2025 (Planalto)
 - HTML no planalto.gov.br, respondeu 200 (~5,4 MB) num teste anterior. Não retestado.
