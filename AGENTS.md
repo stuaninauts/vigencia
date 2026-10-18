@@ -22,6 +22,7 @@ Harness de desenvolvimento pronto (2026-10-14), sem código de domínio. Próxim
 - Código: `src/vigencia/` (src layout, tipado). Testes: `tests/`, espelhando a estrutura de `src/`.
 - Visão macro (arquitetura, bancada, fases): `docs/visao-macro.md`.
 - Glossário (um termo por conceito): `docs/glossario.md`.
+- Escopo e critérios de cada fase: `docs/fases/` (fase atual: `docs/fases/fase-1.md`).
 - Decisões (ADRs): `docs/decisions/NNNN-titulo.md`, formato em `docs/decisions/README.md`.
 - Experimentos: `docs/experiments/NNNN-titulo.md`, a partir de `docs/experiments/TEMPLATE.md`.
 - Fontes e acesso testado: `docs/research/fontes.md`.
@@ -65,7 +66,8 @@ normal, mas com os termos do glossário.
 ## Limites
 - **Sempre:** `make check` antes de concluir; atualizar `docs/decisions/` quando uma decisão mudar; registrar
   experimento em `docs/experiments/` com config, métricas, latência e custo.
-- **Perguntar antes:** adicionar dependência; rodar benchmark que gasta API paga (informe o custo estimado);
+- **Perguntar antes:** adicionar dependência; qualquer chamada a API paga (LLM, embedding, reranker): rode só depois
+  de o autor autorizar e informe o custo estimado;
   baixar mais que algumas dezenas de documentos do portal; mudar o schema do golden set.
 - **Nunca:** ler ou editar `evals/golden/test/` (é o split `test` do golden set; quem cura é o humano, e o agente que o vê
   contamina os números); ler `.env`; commitar dados brutos ou segredos; usar `--no-verify`.
