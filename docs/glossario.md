@@ -13,6 +13,7 @@ coluna **Não usar**. Termo novo entra aqui antes de ser usado. Exemplos conferi
 | **produção** | Ambiente real da SEFAZ (`tpAmb=1`). | prod, ambiente real |
 | **implantação** | Data em que uma mudança passa a valer num ambiente. Sempre com o ambiente: "implantação em homologação", "implantação em produção". | go-live, entrada em vigor |
 | **vigente** | Definição do projeto: uma regra está vigente na data D no ambiente A se D é igual ou posterior à implantação em A, e nenhuma versão implantada em A até D a retirou ou alterou. | válida, ativa, em vigor |
+| **vigente no portal** | Documento listado em "Documentos vigentes" no Portal NF-e. Vale para o documento inteiro e só para a última versão de cada NT. Não é o mesmo que **vigente**. | atual, válido |
 | **leiaute** | Estrutura do XML definida nas tabelas da NT, com as colunas ID, Campo, Ele, Pai, Tipo, Ocor., Tam. e Descrição. | layout, formato |
 | **schema** | Arquivo XSD que valida o XML. Não é o mesmo que leiaute. | leiaute (para o XSD) |
 | **campo** | Linha do leiaute. Tem ID e nome: o campo `AR03` tem nome `tpAmb`, elemento `E`, pai `AR01`, tipo `N`, ocorrência `1-1`, tamanho `1`. | tag, atributo, elemento (sozinho) |
