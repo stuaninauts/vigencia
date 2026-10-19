@@ -19,10 +19,15 @@ class CitacaoEsperada:
 @dataclass(frozen=True)
 class Pergunta:
     id: str
+    origem: str
+    """`real` (fraseada como quem trabalha com NF-e pergunta) ou `sintetica` (garante cobertura)."""
+    persona: str | None
     tipo: str
     pergunta: str
     resposta_esperada: str
     citacoes: list[CitacaoEsperada]
+    inspiracao: str | None
+    """Link para a dúvida real que inspirou a pergunta (reescrita, nunca copiada)."""
     notas: str
     revisado: bool
 

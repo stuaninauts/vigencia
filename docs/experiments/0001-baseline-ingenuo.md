@@ -12,28 +12,33 @@ dois saltos.
 - **Config:** `configs/baseline.toml` (índice `baseline-374d73788e62`): chunks de 1500 caracteres com 200 de
   sobreposição sobre o texto do `pdftotext -layout`; embedding `BAAI/bge-m3` local; busca vetorial exata, top-5.
 - **Corpus:** 24 documentos vigentes no portal publicados desde 2025-01-01, 531 páginas, 1325 chunks.
-- **Golden set:** `evals/golden/dev/perguntas.jsonl`, 10 perguntas (rascunho, `revisado: false`).
+- **Golden set:** `evals/golden/dev/perguntas.jsonl`, 20 perguntas: 15 reais e 5 sintéticas (revisadas pelo autor em 2026-10-19).
 
 ## Resultados: retrieval
-Comando: `uv run vigencia avaliar-busca` (8 perguntas com citação esperada).
+Comando: `uv run vigencia avaliar-busca` (18 perguntas com citação esperada).
 
-| Pergunta | Tipo | Top-5 |
-|---|---|---|
-| `campo-01` | consulta de campo | falha (NT certa, páginas erradas) |
-| `regra-01` | regra de validação | falha (só outras NTs) |
-| `regra-02` | regra de validação | acerto em 1 |
-| `temporal-01` | temporal | acerto em 1 |
-| `temporal-02` | temporal | acerto em 1 |
-| `temporal-03` | temporal | acerto em 1 |
-| `diff-01` | diff | falha (histórico de outras NTs) |
-| `multihop-01` | multi-hop | falha |
+| Recorte | n | recall@5 | MRR |
+|---|---|---|---|
+| geral | 18 | 0,61 | 0,45 |
+| reais | 14 | 0,71 | 0,50 |
+| sintéticas | 4 | 0,25 | 0,25 |
+| temporal | 5 | 0,80 | 0,80 |
+| regra de validação | 6 | 0,67 | 0,37 |
+| consulta de campo | 2 | 0,50 | 0,50 |
+| multi-hop | 2 | 0,50 | 0,25 |
+| diff | 2 | 0,00 | 0,00 |
 
-**recall@5 0,50 · MRR 0,50.** Com top-10 o resultado não muda (recall@10 0,50).
+Falhas: `temporal-01` (rejeição 1115, página vizinha), `regra-03` (rejeição 1201, só outras NTs), `diff-01` e `diff-02`
+(histórico de outras NTs), `campo-01` (linha de leiaute), `regra-06` e `multihop-02` (código de rejeição sem contexto).
+
+Primeira rodada, com 10 perguntas mais técnicas (substituídas): recall@5 0,50, MRR 0,50.
 
 ## Resultados: geração
 Pendente: `vigencia perguntar` chama a API paga e só roda com autorização do autor.
 
 ## Análise (parcial)
+- **Perguntas reais rendem mais que as sintéticas** (0,71 contra 0,25 de recall): a pergunta real traz contexto
+  ("nota de crédito", "devolução", a mensagem da SEFAZ), enquanto a sintética traz só o código.
 - **Identificador exato:** "rejeição 1011" não aproxima o chunk da regra `UB01-10` no espaço vetorial. Candidato
   natural à busca lexical (experimento 0002).
 - **Identidade do documento:** "versão 1.52 da NT 2025.002" recupera o Histórico de Alterações de outras NTs, porque

@@ -111,9 +111,14 @@ def _cmd_avaliar_busca(args: argparse.Namespace) -> int:
             marca = f"acerto em {posicao}" if posicao else "FALHA"
             achados = ", ".join(f"{r.chave} p.{r.pagina_inicio}" for r in resultados)
             print(f"{pergunta.id:16} {marca:12} top-{k}: {achados}")  # noqa: T201
-    m = avaliacao.metricas(posicoes)
-    print(f"\n{indexar.nome_indice(cfg)}: {m.perguntas} perguntas com citação · ", end="")  # noqa: T201
-    print(f"recall@{k} {m.recall_at_k:.2f} · MRR {m.mrr:.2f}")  # noqa: T201
+    print(f"\n{indexar.nome_indice(cfg)} · recall@{k} e MRR")  # noqa: T201
+    grupos: dict[str, list[int | None]] = {"geral": posicoes}
+    for pergunta, posicao in zip(perguntas, posicoes, strict=True):
+        grupos.setdefault(f"origem {pergunta.origem}", []).append(posicao)
+        grupos.setdefault(f"tipo {pergunta.tipo}", []).append(posicao)
+    for nome, valores in grupos.items():
+        m = avaliacao.metricas(valores)
+        print(f"  {nome:30} n={m.perguntas:<3} recall {m.recall_at_k:.2f}  MRR {m.mrr:.2f}")  # noqa: T201
     return 0
 
 

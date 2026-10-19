@@ -31,8 +31,17 @@ def test_golden_dev_e_valido_e_tem_ids_unicos() -> None:
             "multi-hop",
             "sem resposta",
         }
-        sem_citacao = p.tipo in {"agregada", "sem resposta"}
-        assert (not p.citacoes) == sem_citacao, p.id
+        assert p.origem in {"real", "sintetica"}, p.id
+        assert (p.persona is None) == (p.origem == "sintetica"), p.id
+        if p.tipo == "agregada":
+            assert not p.citacoes, p.id
+        elif p.tipo != "sem resposta":
+            assert p.citacoes, p.id
+
+
+def test_golden_dev_tem_15_reais_e_5_sinteticas() -> None:
+    origens = [p.origem for p in carregar_golden(GOLDEN)]
+    assert (origens.count("real"), origens.count("sintetica")) == (15, 5)
 
 
 def test_acerto_quando_a_pagina_esta_na_faixa_do_chunk() -> None:

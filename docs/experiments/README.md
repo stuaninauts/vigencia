@@ -10,4 +10,4 @@ baseline do próximo. Card a partir de [`TEMPLATE.md`](TEMPLATE.md), nome `NNNN-
 ## Índice
 | # | Variável | Resultado | Decisão |
 |---|---|---|---|
-| [0001](0001-baseline-ingenuo.md) | baseline ingênuo (chunk fixo, só vetorial) | recall@5 0,50 · MRR 0,50 (retrieval) | geração pendente |
+| [0001](0001-baseline-ingenuo.md) | baseline ingênuo (chunk fixo, só vetorial) | recall@5 0,61 · MRR 0,45 (retrieval, 20 perguntas) | geração pendente |
