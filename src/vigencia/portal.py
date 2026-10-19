@@ -52,7 +52,13 @@ class ItemLista:
 
     @property
     def url(self) -> str:
-        return URL_BASE + "exibirArquivo.aspx?conteudo=" + quote(self.conteudo_id, safe="")
+        return url_documento(self.conteudo_id)
+
+
+def url_documento(conteudo_id: str, pagina: int | None = None) -> str:
+    """URL do PDF no portal; com `pagina`, abre o PDF na página (fragmento `#page=`)."""
+    url = URL_BASE + "exibirArquivo.aspx?conteudo=" + quote(conteudo_id, safe="")
+    return f"{url}#page={pagina}" if pagina else url
 
 
 def normalizar(texto: str) -> str:

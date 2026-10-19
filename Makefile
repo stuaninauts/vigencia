@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help setup fmt lint typecheck test test-all hooks-test check ci
+.PHONY: help setup db fmt lint typecheck test test-all hooks-test check ci
 
 help: ## lista os alvos
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-11s %s\n", $$1, $$2}'
@@ -7,6 +7,9 @@ help: ## lista os alvos
 setup: ## instala dependências e git hooks (uma vez após clonar)
 	uv sync
 	uv run pre-commit install
+
+db: ## sobe o Postgres com pgvector (docker compose)
+	docker compose up -d --wait
 
 fmt: ## formata e corrige o que o ruff consegue
 	uv run ruff format
@@ -19,10 +22,10 @@ lint: ## lint e formatação sem alterar arquivos
 typecheck: ## mypy strict
 	uv run mypy
 
-test: ## testes rápidos (sem rede e sem LLM)
-	uv run pytest -m "not network and not eval"
+test: ## testes rápidos (sem rede, LLM nem banco)
+	uv run pytest -m "not network and not eval and not db"
 
-test-all: ## todos os testes, inclusive rede e LLM
+test-all: ## todos os testes, inclusive rede, LLM e banco (rode make db antes)
 	uv run pytest
 
 hooks-test: ## testes dos guardrails do Claude Code e dos scripts de hook
