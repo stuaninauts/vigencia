@@ -1,0 +1,24 @@
+# Experimento 0006: baseline fusao-rota (sem reranker) com cabeçalho de contexto no chunk.
+nome = "cabecalho-fusao-rota"
+
+[chunking]
+estrategia = "tamanho-fixo"
+tamanho = 1500        # caracteres
+sobreposicao = 200    # caracteres
+cabecalho = true
+
+[embedding]
+modelo = "BAAI/bge-m3"
+dimensao = 1024
+lote = 16
+
+[busca]
+top_k = 5
+metodo = "hibrida"
+dicionario = "portuguese"
+roteamento = "codigo"
+
+[geracao]
+modelo = "claude-opus-5-5"
+esforco = "medium"
+max_tokens = 16000

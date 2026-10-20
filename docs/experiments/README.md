@@ -15,3 +15,4 @@ baseline do próximo. Card a partir de [`TEMPLATE.md`](TEMPLATE.md), nome `NNNN-
 | [0003](0003-busca-lexical-hibrida.md) | busca: ts_rank, BM25, híbrida (RRF) | BM25 0,67 · ts_rank 0,06-0,11 · híbrida 0,61-0,67 | híbrida BM25 + RRF k 5 vira baseline |
 | [0004](0004-fusao.md) | fusão: peso do BM25, roteamento por código | roteamento 0,67 · MRR 0,55; peso não muda o recall | roteamento vira baseline |
 | [0005](0005-reranker.md) | reranker bge-reranker-v2-m3 sobre 20 e 50 candidatos | 0,83 / 0,89 · MRR 0,69 / 0,70 · p50 328 / 779 ms | rerank-20 vira baseline |
+| [0006](0006-cabecalho-no-chunk.md) | cabeçalho de NT, versão e página no chunk | com reranker 0,83 para 0,89 · MRR 0,71; diff 0 para 0,50 | cabecalho-rerank-20 vira baseline |

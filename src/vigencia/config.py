@@ -17,6 +17,8 @@ class ConfigChunking:
     estrategia: str
     tamanho: int
     sobreposicao: int
+    cabecalho: bool = False
+    """Prefixa cada chunk com NT, versão, data, páginas e descrição do documento."""
 
 
 @dataclass(frozen=True)
