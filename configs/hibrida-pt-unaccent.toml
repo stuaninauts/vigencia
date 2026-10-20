@@ -1,0 +1,22 @@
+# Experimento 0003: mesmo índice do baseline; busca híbrida (vetorial + BM25 pt_unaccent, RRF).
+nome = "hibrida-pt-unaccent"
+
+[chunking]
+estrategia = "tamanho-fixo"
+tamanho = 1500        # caracteres
+sobreposicao = 200    # caracteres
+
+[embedding]
+modelo = "BAAI/bge-m3"
+dimensao = 1024
+lote = 16
+
+[busca]
+top_k = 5
+metodo = "hibrida"
+dicionario = "pt_unaccent"
+
+[geracao]
+modelo = "claude-opus-5-5"
+esforco = "medium"
+max_tokens = 16000

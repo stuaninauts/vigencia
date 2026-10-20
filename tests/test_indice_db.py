@@ -51,7 +51,10 @@ def documento(sha: str = "a" * 64) -> Documento:
     )
 
 
-CHUNKS = [Chunk(0, "campo cClassTrib", 1, 1), Chunk(1, "rejeição 1011", 2, 3)]
+CHUNKS = [
+    Chunk(0, "campo cClassTrib", 1, 1),
+    Chunk(1, "Rejeição 1011: uso do Imposto Seletivo", 2, 3),
+]
 VETORES = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]
 
 
@@ -70,5 +73,21 @@ def test_ja_indexado_compara_o_hash(conn: indice.Conexao) -> None:
 def test_busca_vetorial_ordena_por_proximidade(conn: indice.Conexao) -> None:
     indice.substituir(conn, CONFIG, documento(), CHUNKS, VETORES)
     resultados = indice.buscar_vetorial(conn, CONFIG, [0.1, 0.9, 0.0], k=2)
-    assert [r.texto for r in resultados] == ["rejeição 1011", "campo cClassTrib"]
+    assert [r.ordem for r in resultados] == [1, 0]
     assert (resultados[0].pagina_inicio, resultados[0].pagina_fim) == (2, 3)
+
+
+def test_fts_casa_mensagem_sem_acento_so_com_pt_unaccent(conn: indice.Conexao) -> None:
+    indice.substituir(conn, CONFIG, documento(), CHUNKS, VETORES)
+    pergunta = "Rejeicao do Imposto Seletivo"
+    sem_acento = indice.buscar_fts(conn, CONFIG, pergunta, "pt_unaccent", k=2)
+    assert [r.ordem for r in sem_acento] == [1]
+    assert indice.termos(conn, "portuguese", "Rejeicao") != indice.termos(
+        conn, "portuguese", "Rejeição"
+    )
+
+
+def test_frequencias_alimentam_o_bm25(conn: indice.Conexao) -> None:
+    indice.substituir(conn, CONFIG, documento(), CHUNKS, VETORES)
+    freqs = indice.frequencias(conn, CONFIG, "simple")
+    assert freqs[("id=", 1)]["1011"] == 1

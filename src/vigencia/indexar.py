@@ -15,8 +15,9 @@ log = logging.getLogger(__name__)
 
 
 def nome_indice(config: Config) -> str:
-    """Nome da config no índice: muda quando o arquivo de config muda."""
-    return f"{config.nome}-{config.impressao}"
+    """Nome do índice: depende só de chunking e embedding, então configs que mudam apenas a busca
+    ou a geração compartilham o mesmo índice."""
+    return f"{config.chunking.estrategia}-{config.chunking.tamanho}-{config.impressao}"
 
 
 @dataclass(frozen=True)

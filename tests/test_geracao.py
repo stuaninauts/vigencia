@@ -7,8 +7,8 @@ from vigencia.config import ConfigGeracao
 from vigencia.geracao import interpretar, montar_conteudo, titulo
 from vigencia.indice import Resultado
 
-R1 = Resultado("HXPO8VLbh4o=", "NT 2025.002", "1.52", date(2026, 10, 1), 25, 26, "linha", 0.4)
-R2 = Resultado("HXPO8VLbh4o=", "NT 2025.002", "1.52", date(2026, 10, 1), 43, 43, "regra", 0.5)
+R1 = Resultado("HXPO8VLbh4o=", 7, "NT 2025.002", "1.52", date(2026, 10, 1), 25, 26, "linha", 0.4)
+R2 = Resultado("HXPO8VLbh4o=", 9, "NT 2025.002", "1.52", date(2026, 10, 1), 43, 43, "regra", 0.5)
 
 
 def mensagem(conteudo: list[dict[str, object]], stop_reason: str = "end_turn") -> BetaMessage:
