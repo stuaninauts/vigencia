@@ -28,6 +28,7 @@ class ConfigEmbedding:
 
 type Metodo = Literal["vetorial", "fts", "bm25", "hibrida"]
 type Dicionario = Literal["simple", "portuguese", "pt_unaccent"]
+type Roteamento = Literal["nenhum", "codigo"]
 
 
 @dataclass(frozen=True)
@@ -42,12 +43,19 @@ class ConfigBusca:
     """Quantos resultados de cada lista entram na fusão da busca híbrida."""
     rrf_k: int = 60
     """Constante do Reciprocal Rank Fusion: 1 / (rrf_k + posição)."""
+    peso_lexical: float = 1.0
+    """Peso da lista do BM25 na fusão (a vetorial tem peso 1)."""
+    roteamento: Roteamento = "nenhum"
+    """`codigo`: pergunta com código (ID de regra, rejeição, versão, número de NT) vai só para
+    o BM25."""
 
     def __post_init__(self) -> None:
         if self.metodo not in get_args(Metodo.__value__):
             raise ValueError(f"método de busca inválido: {self.metodo!r}")
         if self.dicionario not in get_args(Dicionario.__value__):
             raise ValueError(f"dicionário inválido: {self.dicionario!r}")
+        if self.roteamento not in get_args(Roteamento.__value__):
+            raise ValueError(f"roteamento inválido: {self.roteamento!r}")
 
 
 @dataclass(frozen=True)

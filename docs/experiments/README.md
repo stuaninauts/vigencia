@@ -13,3 +13,4 @@ baseline do próximo. Card a partir de [`TEMPLATE.md`](TEMPLATE.md), nome `NNNN-
 | [0001](0001-baseline-ingenuo.md) | baseline ingênuo (chunk fixo, só vetorial) | recall@5 0,61 · MRR 0,45 (retrieval, 20 perguntas) | geração pendente |
 | [0002](0002-tamanho-do-chunk.md) | tamanho do chunk: 800, 1500, 3000 | recall 0,50 / 0,61 / 0,56 (mesmo volume de texto) | mantém 1500; falhas são estruturais |
 | [0003](0003-busca-lexical-hibrida.md) | busca: ts_rank, BM25, híbrida (RRF) | BM25 0,67 · ts_rank 0,06-0,11 · híbrida 0,61-0,67 | híbrida BM25 + RRF k 5 vira baseline |
+| [0004](0004-fusao.md) | fusão: peso do BM25, roteamento por código | roteamento 0,67 · MRR 0,55; peso não muda o recall | roteamento vira baseline |

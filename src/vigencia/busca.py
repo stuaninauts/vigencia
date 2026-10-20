@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+import re
 from collections import Counter
 from collections.abc import Callable
 from dataclasses import replace
@@ -46,13 +47,32 @@ class Bm25:
         return sorted(pontos.items(), key=lambda par: par[1], reverse=True)[:k]
 
 
-def fundir_rrf(listas: list[list[IdChunk]], rrf_k: int, k: int) -> list[tuple[IdChunk, float]]:
-    """Reciprocal Rank Fusion: soma 1 / (rrf_k + posição) de cada lista em que o chunk aparece."""
+def fundir_rrf(
+    listas: list[list[IdChunk]], rrf_k: int, k: int, pesos: list[float] | None = None
+) -> list[tuple[IdChunk, float]]:
+    """Reciprocal Rank Fusion: soma peso / (rrf_k + posição) de cada lista onde o chunk aparece."""
+    pesos = pesos or [1.0] * len(listas)
     pontos: dict[IdChunk, float] = {}
-    for lista in listas:
+    for lista, peso in zip(listas, pesos, strict=True):
         for posicao, chunk in enumerate(lista, start=1):
-            pontos[chunk] = pontos.get(chunk, 0.0) + 1 / (rrf_k + posicao)
+            pontos[chunk] = pontos.get(chunk, 0.0) + peso / (rrf_k + posicao)
     return sorted(pontos.items(), key=lambda par: par[1], reverse=True)[:k]
+
+
+# Identificadores que a busca vetorial não distingue: ID de regra (UB12-10), número de NT
+# (2025.002), versão (v1.52), cClassTrib (6 dígitos) e código de rejeição (3 ou 4 dígitos que
+# não sejam ano nem parte de data).
+_CODIGO = re.compile(
+    r"\b[A-Z]{1,2}\d+[a-z]?-\d+\b"
+    r"|\b\d{4}\.\d{3}\b"
+    r"|\bv\.?\s?\d+\.\d+"
+    r"|\b\d{6}\b"
+    r"|(?<![\d/])\b(?!20\d\d\b)\d{3,4}\b(?![/\d])"
+)
+
+
+def tem_codigo(pergunta: str) -> bool:
+    return _CODIGO.search(pergunta) is not None
 
 
 class Buscador:
@@ -85,10 +105,13 @@ class Buscador:
             case "bm25":
                 return self._carregar(self._bm25_ids(pergunta, k))
             case "hibrida":
+                if self._cfg.roteamento == "codigo" and tem_codigo(pergunta):
+                    return self._carregar(self._bm25_ids(pergunta, k))
                 n = self._cfg.candidatos
                 vetorial = [r.id_chunk for r in self._vetorial(pergunta, n)]
                 lexical = [c for c, _ in self._bm25_ids(pergunta, n)]
-                return self._carregar(fundir_rrf([vetorial, lexical], self._cfg.rrf_k, k))
+                pesos = [1.0, self._cfg.peso_lexical]
+                return self._carregar(fundir_rrf([vetorial, lexical], self._cfg.rrf_k, k, pesos))
 
     def _vetorial(self, pergunta: str, k: int) -> list[Resultado]:
         assert self._embutir is not None  # noqa: S101 (garantido no __init__)
