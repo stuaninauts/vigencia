@@ -75,6 +75,12 @@ def tem_codigo(pergunta: str) -> bool:
     return _CODIGO.search(pergunta) is not None
 
 
+def reordenar_por_nota(resultados: list[Resultado], notas: list[float], k: int) -> list[Resultado]:
+    """Ordena pela nota do reranker (maior primeiro) e guarda a nota como pontuação."""
+    pares = sorted(zip(resultados, notas, strict=True), key=lambda par: par[1], reverse=True)
+    return [replace(r, pontuacao=nota) for r, nota in pares[:k]]
+
+
 class Buscador:
     """Executa o método de busca da config. Guarda o BM25 entre perguntas (carrega uma vez)."""
 
@@ -84,17 +90,28 @@ class Buscador:
         nome_indice: str,
         cfg: ConfigBusca,
         embutir: Callable[[str], list[float]] | None,
+        reordenar: Callable[[str, list[str]], list[float]] | None = None,
     ) -> None:
         if cfg.metodo in ("vetorial", "hibrida") and embutir is None:
             raise ValueError(f"o método {cfg.metodo!r} precisa de um modelo de embedding")
+        if cfg.reranker and reordenar is None:
+            raise ValueError("a config pede reranker, mas nenhum modelo foi passado")
         self._conn = conn
         self._indice = nome_indice
         self._cfg = cfg
         self._embutir = embutir
+        self._reordenar = reordenar
         self._bm25: Bm25 | None = None
 
     def buscar(self, pergunta: str, k: int | None = None) -> list[Resultado]:
         k = k or self._cfg.top_k
+        if self._reordenar is None:
+            return self._metodo(pergunta, k)
+        candidatos = self._metodo(pergunta, max(k, self._cfg.candidatos_reranker))
+        notas = self._reordenar(pergunta, [r.texto for r in candidatos])
+        return reordenar_por_nota(candidatos, notas, k)
+
+    def _metodo(self, pergunta: str, k: int) -> list[Resultado]:
         match self._cfg.metodo:
             case "vetorial":
                 return self._vetorial(pergunta, k)

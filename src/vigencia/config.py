@@ -49,6 +49,11 @@ class ConfigBusca:
     """`codigo`: pergunta com código (ID de regra, rejeição, versão, número de NT) vai só para
     o BM25."""
 
+    reranker: str | None = None
+    """Modelo cross-encoder que reordena os candidatos (ex.: `BAAI/bge-reranker-v2-m3`)."""
+    candidatos_reranker: int = 20
+    """Quantos resultados do método de busca o reranker reordena."""
+
     def __post_init__(self) -> None:
         if self.metodo not in get_args(Metodo.__value__):
             raise ValueError(f"método de busca inválido: {self.metodo!r}")

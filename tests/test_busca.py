@@ -67,3 +67,23 @@ def test_rrf_com_peso_favorece_a_lista_pesada() -> None:
 )
 def test_detecta_codigo_na_pergunta(pergunta: str, esperado: bool) -> None:
     assert tem_codigo(pergunta) is esperado
+
+
+def test_reordenar_por_nota_do_reranker() -> None:
+    from datetime import date
+
+    from vigencia.busca import reordenar_por_nota
+    from vigencia.indice import Resultado
+
+    def r(ordem: int) -> Resultado:
+        return Resultado("id=", ordem, "NT 2025.002", "1.52", date(2026, 10, 1), 1, 1, "t", 0.0)
+
+    reordenados = reordenar_por_nota([r(0), r(1), r(2)], [0.1, 0.9, 0.5], k=2)
+    assert [x.ordem for x in reordenados] == [1, 2]
+    assert reordenados[0].pontuacao == 0.9
+
+
+def test_reranker_na_config_exige_modelo() -> None:
+    cfg = ConfigBusca(top_k=5, metodo="fts", reranker="BAAI/bge-reranker-v2-m3")
+    with pytest.raises(ValueError, match="reranker"):
+        Buscador(None, "indice", cfg, None)  # type: ignore[arg-type]

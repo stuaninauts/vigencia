@@ -59,7 +59,12 @@ def _buscador(cfg: config.Config, conn: indice.Conexao) -> Buscador:
         def embutir(texto: str) -> list[float]:
             return embedder.embutir([texto])[0]
 
-    return Buscador(conn, indexar.nome_indice(cfg), cfg.busca, embutir)
+    reordenar = None
+    if cfg.busca.reranker:
+        from vigencia.embeddings import CrossEncoderReranker
+
+        reordenar = CrossEncoderReranker(cfg.busca.reranker).pontuar
+    return Buscador(conn, indexar.nome_indice(cfg), cfg.busca, embutir, reordenar)
 
 
 def _cmd_buscar(args: argparse.Namespace) -> int:
@@ -122,6 +127,8 @@ def _cmd_avaliar_busca(args: argparse.Namespace) -> int:
             print(f"{pergunta.id:16} {marca:12} top-{k}: {achados}")  # noqa: T201
     b = cfg.busca
     metodo = b.metodo if b.metodo == "vetorial" else f"{b.metodo} ({b.dicionario})"
+    if b.reranker:
+        metodo += f" + reranker {b.reranker} (top {b.candidatos_reranker})"
     print(f"\n{cfg.nome} · {metodo} · índice {indexar.nome_indice(cfg)} · recall@{k} e MRR")  # noqa: T201
     grupos: dict[str, list[int | None]] = {"geral": posicoes}
     for pergunta, posicao in zip(perguntas, posicoes, strict=True):
