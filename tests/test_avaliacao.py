@@ -15,7 +15,7 @@ GOLDEN = Path(__file__).parents[1] / "evals" / "golden" / "dev" / "perguntas.jso
 
 
 def resultado(chave: str, inicio: int, fim: int) -> Resultado:
-    return Resultado("id=", chave, "1.52", date(2026, 10, 1), inicio, fim, "texto", 0.5)
+    return Resultado("id=", inicio, chave, "1.52", date(2026, 10, 1), inicio, fim, "texto", 0.5)
 
 
 def test_golden_dev_e_valido_e_tem_ids_unicos() -> None:

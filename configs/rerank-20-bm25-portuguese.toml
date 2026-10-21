@@ -1,0 +1,24 @@
+# Experimento 0005 (controle): bm25-portuguese + reranker cross-encoder sobre 20 candidatos.
+nome = "rerank-20-bm25-portuguese"
+
+[chunking]
+estrategia = "tamanho-fixo"
+tamanho = 1500        # caracteres
+sobreposicao = 200    # caracteres
+
+[embedding]
+modelo = "BAAI/bge-m3"
+dimensao = 1024
+lote = 16
+
+[busca]
+top_k = 5
+reranker = "BAAI/bge-reranker-v2-m3"
+candidatos_reranker = 20
+metodo = "bm25"
+dicionario = "portuguese"
+
+[geracao]
+modelo = "claude-opus-5-5"
+esforco = "medium"
+max_tokens = 16000

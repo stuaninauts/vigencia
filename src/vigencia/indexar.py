@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 from vigencia import chunking, extracao, indice, manifesto
@@ -14,9 +14,20 @@ from vigencia.indice import Conexao
 log = logging.getLogger(__name__)
 
 
+def cabecalho(doc: manifesto.Documento, chunk: chunking.Chunk) -> str:
+    """Contexto do documento em uma linha, sem LLM: o chunk passa a dizer de qual NT e versão é."""
+    paginas = f"p. {chunk.pagina_inicio}"
+    if chunk.pagina_fim != chunk.pagina_inicio:
+        paginas += f"-{chunk.pagina_fim}"
+    versao = f" versão {doc.versao} (v{doc.versao})" if doc.versao else ""
+    data = doc.publicado_em.strftime("%d/%m/%Y")
+    return f"[{doc.chave}{versao} · publicada em {data} · {paginas} · {doc.descricao}]"
+
+
 def nome_indice(config: Config) -> str:
-    """Nome da config no índice: muda quando o arquivo de config muda."""
-    return f"{config.nome}-{config.impressao}"
+    """Nome do índice: depende só de chunking e embedding, então configs que mudam apenas a busca
+    ou a geração compartilham o mesmo índice."""
+    return f"{config.chunking.estrategia}-{config.chunking.tamanho}-{config.impressao}"
 
 
 @dataclass(frozen=True)
@@ -46,6 +57,8 @@ def indexar(
         chunks = chunking.tamanho_fixo(
             paginas, config.chunking.tamanho, config.chunking.sobreposicao
         )
+        if config.chunking.cabecalho:
+            chunks = [replace(c, texto=cabecalho(doc, c) + "\n" + c.texto) for c in chunks]
         vetores = embedder.embutir([c.texto for c in chunks])
         indice.substituir(conn, nome, doc, chunks, vetores)
         indexados += 1

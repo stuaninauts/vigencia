@@ -5,10 +5,13 @@ from __future__ import annotations
 import argparse
 import logging
 import os
+import statistics
+import time
 from datetime import date
 from pathlib import Path
 
 from vigencia import avaliacao, baixar, config, indexar, indice
+from vigencia.busca import Buscador
 
 
 def _pasta_dados() -> Path:
@@ -45,21 +48,34 @@ def _cmd_indexar(args: argparse.Namespace) -> int:
     return 0
 
 
-def _cmd_buscar(args: argparse.Namespace) -> int:
-    from vigencia.embeddings import SentenceTransformerEmbedder
+def _buscador(cfg: config.Config, conn: indice.Conexao) -> Buscador:
+    """Carrega o modelo de embedding só quando o método de busca usa vetores."""
+    embutir = None
+    if cfg.busca.metodo in ("vetorial", "hibrida"):
+        from vigencia.embeddings import SentenceTransformerEmbedder
 
+        embedder = SentenceTransformerEmbedder(cfg.embedding.modelo, cfg.embedding.lote)
+
+        def embutir(texto: str) -> list[float]:
+            return embedder.embutir([texto])[0]
+
+    reordenar = None
+    if cfg.busca.reranker:
+        from vigencia.embeddings import CrossEncoderReranker
+
+        reordenar = CrossEncoderReranker(cfg.busca.reranker).pontuar
+    return Buscador(conn, indexar.nome_indice(cfg), cfg.busca, embutir, reordenar)
+
+
+def _cmd_buscar(args: argparse.Namespace) -> int:
     cfg = config.carregar(args.config)
-    embedder = SentenceTransformerEmbedder(cfg.embedding.modelo, cfg.embedding.lote)
-    vetor = embedder.embutir([args.pergunta])[0]
     with indice.conectar() as conn:
-        resultados = indice.buscar_vetorial(
-            conn, indexar.nome_indice(cfg), vetor, args.k or cfg.busca.top_k
-        )
+        resultados = _buscador(cfg, conn).buscar(args.pergunta, args.k)
     for posicao, r in enumerate(resultados, start=1):
         paginas = f"p. {r.pagina_inicio}" + (
             f"-{r.pagina_fim}" if r.pagina_fim != r.pagina_inicio else ""
         )
-        print(f"[{posicao}] {r.chave} v{r.versao} {paginas} (distância {r.distancia:.3f})")  # noqa: T201
+        print(f"[{posicao}] {r.chave} v{r.versao} {paginas} (pontuação {r.pontuacao:.3f})")  # noqa: T201
         print("    " + " ".join(r.texto.split())[:300])  # noqa: T201
     return 0
 
@@ -69,13 +85,10 @@ def _cmd_perguntar(args: argparse.Namespace) -> int:
     import anthropic
 
     from vigencia import geracao
-    from vigencia.embeddings import SentenceTransformerEmbedder
 
     cfg = config.carregar(args.config)
-    embedder = SentenceTransformerEmbedder(cfg.embedding.modelo, cfg.embedding.lote)
-    vetor = embedder.embutir([args.pergunta])[0]
     with indice.conectar() as conn:
-        resultados = indice.buscar_vetorial(conn, indexar.nome_indice(cfg), vetor, cfg.busca.top_k)
+        resultados = _buscador(cfg, conn).buscar(args.pergunta)
     resposta = geracao.responder(anthropic.Anthropic(), args.pergunta, resultados, cfg.geracao)
     if resposta.recusou:
         logging.warning("o modelo recusou responder")
@@ -95,23 +108,28 @@ def _cmd_perguntar(args: argparse.Namespace) -> int:
 
 
 def _cmd_avaliar_busca(args: argparse.Namespace) -> int:
-    from vigencia.embeddings import SentenceTransformerEmbedder
-
     cfg = config.carregar(args.config)
     perguntas = [p for p in avaliacao.carregar_golden(args.golden) if p.citacoes]
-    embedder = SentenceTransformerEmbedder(cfg.embedding.modelo, cfg.embedding.lote)
-    vetores = embedder.embutir([p.pergunta for p in perguntas])
     k = args.k or cfg.busca.top_k
     posicoes: list[int | None] = []
+    latencias: list[float] = []
     with indice.conectar() as conn:
-        for pergunta, vetor in zip(perguntas, vetores, strict=True):
-            resultados = indice.buscar_vetorial(conn, indexar.nome_indice(cfg), vetor, k)
+        buscador = _buscador(cfg, conn)
+        buscador.buscar(perguntas[0].pergunta, k)  # aquecimento: modelo na GPU, BM25 em memória
+        for pergunta in perguntas:
+            inicio = time.perf_counter()
+            resultados = buscador.buscar(pergunta.pergunta, k)
+            latencias.append((time.perf_counter() - inicio) * 1000)
             posicao = avaliacao.posicao_do_acerto(resultados, pergunta.citacoes)
             posicoes.append(posicao)
             marca = f"acerto em {posicao}" if posicao else "FALHA"
             achados = ", ".join(f"{r.chave} p.{r.pagina_inicio}" for r in resultados)
             print(f"{pergunta.id:16} {marca:12} top-{k}: {achados}")  # noqa: T201
-    print(f"\n{indexar.nome_indice(cfg)} · recall@{k} e MRR")  # noqa: T201
+    b = cfg.busca
+    metodo = b.metodo if b.metodo == "vetorial" else f"{b.metodo} ({b.dicionario})"
+    if b.reranker:
+        metodo += f" + reranker {b.reranker} (top {b.candidatos_reranker})"
+    print(f"\n{cfg.nome} · {metodo} · índice {indexar.nome_indice(cfg)} · recall@{k} e MRR")  # noqa: T201
     grupos: dict[str, list[int | None]] = {"geral": posicoes}
     for pergunta, posicao in zip(perguntas, posicoes, strict=True):
         grupos.setdefault(f"origem {pergunta.origem}", []).append(posicao)
@@ -119,6 +137,8 @@ def _cmd_avaliar_busca(args: argparse.Namespace) -> int:
     for nome, valores in grupos.items():
         m = avaliacao.metricas(valores)
         print(f"  {nome:30} n={m.perguntas:<3} recall {m.recall_at_k:.2f}  MRR {m.mrr:.2f}")  # noqa: T201
+    p50, p95 = statistics.quantiles(latencias, n=20)[9], statistics.quantiles(latencias, n=20)[18]
+    print(f"  latência da busca: p50 {p50:.0f} ms · p95 {p95:.0f} ms")  # noqa: T201
     return 0
 
 

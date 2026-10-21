@@ -1,0 +1,23 @@
+# Experimento 0003: mesmo índice do baseline; busca híbrida (vetorial + BM25 portuguese, RRF).
+nome = "hibrida-portuguese-rrf5"
+
+[chunking]
+estrategia = "tamanho-fixo"
+tamanho = 1500        # caracteres
+sobreposicao = 200    # caracteres
+
+[embedding]
+modelo = "BAAI/bge-m3"
+dimensao = 1024
+lote = 16
+
+[busca]
+top_k = 5
+metodo = "hibrida"
+dicionario = "portuguese"
+rrf_k = 5
+
+[geracao]
+modelo = "claude-opus-5-5"
+esforco = "medium"
+max_tokens = 16000
