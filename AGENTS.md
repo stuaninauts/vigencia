@@ -15,6 +15,8 @@ Harness de desenvolvimento pronto (2026-10-14), sem código de domínio. Próxim
 - `make setup`: instala dependências (`uv sync`) e os git hooks (pre-commit e commit-msg). Rode uma vez após clonar.
 - `make check`: lint, formatação, tipos, testes e testes dos hooks. **Rode antes de dizer que terminou.**
 - `make fmt` (formata e corrige lint) · `make test` (sem rede nem LLM) · `make test-all` (inclui `network` e `eval`).
+- `make eval`: avaliação ponta a ponta no split `dev`, só estimando o custo. Com `CONFIRMAR=1` faz chamadas pagas
+  (o hook pede confirmação humana). Fluxo completo em `evals/README.md`.
 - Dependências só com `uv add <pacote>` ou `uv add --dev <pacote>`; nunca `pip install` (fura o `uv.lock`).
 - Python e ferramentas sempre via `uv run ...` (Python 3.13, versão em `.python-version`).
 

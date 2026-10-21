@@ -34,4 +34,10 @@ fi
 # volumes do Docker guardam índice e banco; apagar é ação do humano
 has '\bdocker\b.*\b(volume[[:space:]]+(rm|prune)|system[[:space:]]+prune)\b' && block "apagar volumes do Docker"
 has '\bdocker\b.*\bcompose\b.*\bdown\b.*[[:space:]](-v|--volumes)\b' && block "docker compose down -v (apaga volumes)"
+# Depois de todos os bloqueios: o que for perigoso já parou acima.
+# chamada paga à API: sempre pede confirmação ao humano, mesmo que a permissão do comando esteja liberada
+if has '(--confirmar\b|\bCONFIRMAR=[^[:space:]]+|\bvigencia[[:space:]]+perguntar\b)'; then
+  printf '%s\n' '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"ask","permissionDecisionReason":"Chamada paga à API da Anthropic: confirme o custo antes de rodar."}}'
+  exit 0
+fi
 exit 0

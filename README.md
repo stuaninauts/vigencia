@@ -15,5 +15,6 @@ uv run vigencia indexar            # pdftotext -> chunks -> bge-m3 embeddings (G
 uv run vigencia buscar "..."       # retrieved chunks only, no LLM
 uv run vigencia avaliar-busca      # recall@k and MRR on the dev golden set, no LLM
 uv run vigencia perguntar "..."    # answer with citations via the Anthropic API (paid call)
+make eval                          # end-to-end eval: retrieval + cost estimate; CONFIRMAR=1 runs generation + LLM judge (paid)
 make check                         # lint, types, tests
 ```

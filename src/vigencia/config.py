@@ -83,6 +83,8 @@ class Config:
     embedding: ConfigEmbedding
     busca: ConfigBusca
     geracao: ConfigGeracao
+    juiz: ConfigGeracao
+    """Modelo do juiz LLM da avaliação ponta a ponta. Sem seção [juiz], usa o mesmo da geração."""
     impressao: str
     """Hash das seções que definem o índice (chunking e embedding). Mudar a geração não reindexa."""
 
@@ -98,5 +100,6 @@ def carregar(caminho: Path) -> Config:
         embedding=ConfigEmbedding(**dados["embedding"]),
         busca=ConfigBusca(**dados["busca"]),
         geracao=ConfigGeracao(**dados["geracao"]),
+        juiz=ConfigGeracao(**dados.get("juiz", dados["geracao"])),
         impressao=hashlib.sha256(do_indice.encode()).hexdigest()[:12],
     )

@@ -10,9 +10,10 @@ novo_repo() { # $1 = diretório, $2 = branch
 }
 novo_repo "$TMP/feat" feat/x; novo_repo "$TMP/main" main
 CWD="$TMP/feat"
-check() { # $1 = esperado (block|allow), $2 = comando
-  local code; jq -n --arg c "$2" --arg d "$CWD" '{tool_name:"Bash",tool_input:{command:$c},cwd:$d}' | "$HOOK" 2>/dev/null; code=$?
+check() { # $1 = esperado (block|ask|allow), $2 = comando
+  local out code; out=$(jq -n --arg c "$2" --arg d "$CWD" '{tool_name:"Bash",tool_input:{command:$c},cwd:$d}' | "$HOOK" 2>/dev/null); code=$?
   local got=allow; [[ $code -eq 2 ]] && got=block
+  [[ $code -eq 0 && $out == *'"permissionDecision":"ask"'* ]] && got=ask
   [[ $got == "$1" ]] && echo "ok    $1  $2" || { echo "FALHA esperado=$1 obtido=$got  $2"; fail=1; }
 }
 check block 'rm -rf data'
@@ -50,6 +51,14 @@ check allow 'git commit --amend'
 check allow 'rm data/cache/arquivo.pdf'
 check allow 'docker compose down'
 check allow 'make check'
+check ask   'make eval CONFIRMAR=1'
+check ask   'make eval CONFIG=configs/x.toml CONFIRMAR=sim'
+check ask   'uv run vigencia avaliar --confirmar'
+check ask   'uv run vigencia perguntar "o que causa a rejeição 1037?"'
+check allow 'make eval'
+check block 'rm -rf data && make eval CONFIRMAR=1'
+check allow 'uv run vigencia avaliar --limite 3'
+check allow 'uv run vigencia avaliar-busca'
 
 CWD="$TMP/main"
 check block 'git push'

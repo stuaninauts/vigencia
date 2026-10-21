@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help setup db fmt lint typecheck test test-all hooks-test check ci
+.PHONY: help setup db fmt lint typecheck test test-all hooks-test check ci eval eval-test
 
 help: ## lista os alvos
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-11s %s\n", $$1, $$2}'
@@ -33,5 +33,12 @@ hooks-test: ## testes dos guardrails do Claude Code e dos scripts de hook
 	bash scripts/test-hooks.sh
 
 check: lint typecheck test hooks-test ## tudo que precisa passar antes de concluir
+
+CONFIG ?= configs/cabecalho-rerank-20.toml
+eval: ## avaliação ponta a ponta no split dev: estima o custo; CONFIRMAR=1 faz as chamadas pagas
+	uv run vigencia avaliar --config $(CONFIG) $(if $(CONFIRMAR),--confirmar,)
+
+eval-test: ## mesma avaliação no split test (só para o número final de um experimento)
+	uv run vigencia avaliar --config $(CONFIG) --golden evals/golden/test/perguntas.jsonl $(if $(CONFIRMAR),--confirmar,)
 
 ci: check ## alias usado pelo GitHub Actions
