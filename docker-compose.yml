@@ -1,0 +1,20 @@
+# Postgres + pgvector para desenvolvimento local. Credenciais só de desenvolvimento.
+services:
+  postgres:
+    image: pgvector/pgvector:0.8.7-pg18
+    environment:
+      POSTGRES_USER: vigencia
+      POSTGRES_PASSWORD: vigencia
+      POSTGRES_DB: vigencia
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vigencia -d vigencia"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+volumes:
+  pgdata:

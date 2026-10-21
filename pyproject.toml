@@ -4,7 +4,13 @@ version = "0.1.0"
 description = "RAG lab over NF-e technical notes during Brazil's consumption tax reform: which rule is in force on a given date."
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "anthropic>=1.15.0",
+    "pgvector>=0.5.1",
+    "psycopg[binary]>=3.3.6",
+    "sentence-transformers>=6.1.0",
+    "torch>=2.14",
+]
 
 [project.scripts]
 vigencia = "vigencia.cli:main"
@@ -47,6 +53,10 @@ select = [
 strict = true
 files = ["src", "tests"]
 
+[[tool.mypy.overrides]]
+module = ["pgvector.*", "sentence_transformers.*"]
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = ["-ra", "--strict-markers", "--strict-config"]
@@ -54,4 +64,14 @@ markers = [
     "network: acessa a internet (portal NF-e etc.)",
     "eval: chama LLM pago ou roda avaliação cara",
     "slow: demora mais que alguns segundos",
+    "db: precisa do Postgres do docker compose",
 ]
+
+# torch do índice do PyTorch com CUDA 12.6: o wheel padrão do PyPI usa CUDA 13, que exige driver NVIDIA >= 580.
+[tool.uv.sources]
+torch = [{ index = "pytorch-cu126", marker = "sys_platform == 'linux'" }]
+
+[[tool.uv.index]]
+name = "pytorch-cu126"
+url = "https://download.pytorch.org/whl/cu126"
+explicit = true
