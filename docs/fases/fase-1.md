@@ -38,7 +38,9 @@ Não otimizar nada antes de existir número. Cada etapa deixa o sistema funciona
 - Juiz LLM com critérios pass/fail: resposta correta, citação sustenta a resposta, recusa quando não há resposta.
 - Calibração do juiz contra cerca de 20 rótulos humanos, com a concordância medida e registrada.
 - Split `test` criado pelo humano (o agente não lê nem escreve esse split).
-- Card `0003`.
+- Card de experimento próprio (a numeração seguiu a ordem em que os experimentos rodaram).
+- **Estado (2026-10-20):** pronto para rodar. `make eval` estima ~US$ 0,75 para as 20 perguntas (geração e
+  juiz com `claude-opus-5-5`); falta a autorização da rodada paga e os rótulos humanos para calibrar.
 
 ## Etapa 1.4: design doc de produção no GCP
 - `docs/design/producao-gcp.md`: diagrama, volume estimado (NTs por mês, chunks, consultas), latência alvo, custo

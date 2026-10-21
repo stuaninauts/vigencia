@@ -142,6 +142,93 @@ def _cmd_avaliar_busca(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_avaliar(args: argparse.Namespace) -> int:
+    """Sem --confirmar: só busca e estima o custo. Com --confirmar: gera, julga e grava (pago)."""
+    from datetime import datetime
+
+    from vigencia import execucao
+
+    cfg = config.carregar(args.config)
+    perguntas = avaliacao.carregar_golden(args.golden)[: args.limite]
+    with indice.conectar() as conn:
+        buscador = _buscador(cfg, conn)
+        itens = []
+        for pergunta in perguntas:
+            inicio = time.perf_counter()
+            resultados = buscador.buscar(pergunta.pergunta)
+            busca_ms = (time.perf_counter() - inicio) * 1000
+            itens.append((pergunta, resultados, busca_ms))
+    estimativa = execucao.estimar([(p, r) for p, r, _ in itens], cfg)
+    custo = f"US$ {estimativa.custo:.2f}" if estimativa.custo is not None else "desconhecido"
+    print(  # noqa: T201
+        f"{estimativa.perguntas} perguntas · geração {cfg.geracao.modelo} · juiz {cfg.juiz.modelo}"
+        f" · ~{estimativa.tokens_entrada} tokens de entrada, ~{estimativa.tokens_saida} de saída"
+        f" · custo estimado {custo}"
+    )
+    if not args.confirmar:
+        print("Nenhuma chamada paga feita. Para rodar: acrescente --confirmar.")  # noqa: T201
+        return 0
+
+    import anthropic
+
+    from vigencia import geracao, juiz
+
+    cliente = anthropic.Anthropic()
+    registros = []
+    for pergunta, resultados, busca_ms in itens:
+        inicio = time.perf_counter()
+        resposta = geracao.responder(cliente, pergunta.pergunta, resultados, cfg.geracao)
+        geracao_ms = (time.perf_counter() - inicio) * 1000
+        inicio = time.perf_counter()
+        julgamento = juiz.julgar(cliente, pergunta, resposta, cfg.juiz)
+        juiz_ms = (time.perf_counter() - inicio) * 1000
+        posicao = avaliacao.posicao_do_acerto(resultados, pergunta.citacoes)
+        latencias = {"busca": round(busca_ms), "geracao": round(geracao_ms), "juiz": round(juiz_ms)}
+        registros.append(
+            execucao.registro(pergunta, posicao, resultados, resposta, julgamento, latencias)
+        )
+        v = julgamento.veredito
+        print(f"{pergunta.id:16} correta={v.correta!s:5} fundamentada={v.fundamentada!s:5}")  # noqa: T201
+    destino = execucao.caminho(args.saida, cfg.nome, datetime.now())
+    execucao.gravar(destino, registros)
+    print(f"\nexecução gravada em {destino}")  # noqa: T201
+    for nome, taxa in execucao.resumir(registros).items():
+        print(  # noqa: T201
+            f"  {nome:30} n={taxa.n:<3} correta {taxa.correta:.2f}"
+            f"  fundamentada {taxa.fundamentada:.2f}  passa {taxa.passa:.2f}"
+        )
+    custo_real = sum(r["custo"] or 0 for r in registros)
+    geracoes = [r["latencia_ms"]["geracao"] for r in registros]
+    print(f"  custo real ~US$ {custo_real:.2f} · geração p50 {statistics.median(geracoes):.0f} ms")  # noqa: T201
+    return 0
+
+
+def _cmd_rotular(args: argparse.Namespace) -> int:
+    from vigencia import execucao
+
+    registros = execucao.ler(args.execucao)
+    perguntas = avaliacao.carregar_golden(args.golden)
+    destino = args.destino / args.execucao.name
+    if destino.exists():
+        logging.error("já existe %s; não sobrescrevo rótulos humanos", destino)
+        return 1
+    execucao.gravar(destino, execucao.modelo_de_rotulos(registros, perguntas))
+    print(f"preencha correta e fundamentada (true/false) em {destino}")  # noqa: T201
+    return 0
+
+
+def _cmd_calibrar(args: argparse.Namespace) -> int:
+    from vigencia import execucao
+
+    resultado = execucao.calibrar(execucao.ler(args.execucao), execucao.ler(args.rotulos))
+    for criterio, c in resultado.items():
+        print(  # noqa: T201
+            f"{criterio:13} n={c.n:<3} concordância {c.concordancia:.2f}  kappa {c.kappa:.2f}"
+            f"  divergentes: {', '.join(c.divergentes) or 'nenhuma'}"
+        )
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="vigencia", description=__doc__)
     sub = parser.add_subparsers(dest="comando", required=True)
@@ -172,6 +259,25 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--config", type=Path, default=Path("configs/baseline.toml"))
     p.add_argument("-k", type=int, default=None)
     p.set_defaults(func=_cmd_avaliar_busca)
+
+    p = sub.add_parser("avaliar", help="busca, geração e juiz no golden set (pago com --confirmar)")
+    p.add_argument("--golden", type=Path, default=Path("evals/golden/dev/perguntas.jsonl"))
+    p.add_argument("--config", type=Path, default=Path("configs/cabecalho-rerank-20.toml"))
+    p.add_argument("--saida", type=Path, default=Path("evals/execucoes"))
+    p.add_argument("--limite", type=int, default=None, help="só as N primeiras perguntas")
+    p.add_argument("--confirmar", action="store_true", help="faz as chamadas pagas")
+    p.set_defaults(func=_cmd_avaliar)
+
+    p = sub.add_parser("rotular", help="cria o arquivo de rótulos humanos de uma execução")
+    p.add_argument("execucao", type=Path)
+    p.add_argument("--golden", type=Path, default=Path("evals/golden/dev/perguntas.jsonl"))
+    p.add_argument("--destino", type=Path, default=Path("evals/rotulos"))
+    p.set_defaults(func=_cmd_rotular)
+
+    p = sub.add_parser("calibrar", help="concordância entre o juiz e os rótulos humanos")
+    p.add_argument("execucao", type=Path)
+    p.add_argument("rotulos", type=Path)
+    p.set_defaults(func=_cmd_calibrar)
 
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")

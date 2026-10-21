@@ -55,10 +55,15 @@ class Resposta:
     tokens_saida: int
 
     def custo_estimado(self) -> float | None:
-        precos = PRECOS.get(self.modelo)
-        if precos is None:
-            return None
-        return (self.tokens_entrada * precos[0] + self.tokens_saida * precos[1]) / 1_000_000
+        return custo(self.modelo, self.tokens_entrada, self.tokens_saida)
+
+
+def custo(modelo: str, tokens_entrada: int, tokens_saida: int) -> float | None:
+    """Custo em US$ pela tabela PRECOS; None para modelo fora da tabela."""
+    precos = PRECOS.get(modelo)
+    if precos is None:
+        return None
+    return (tokens_entrada * precos[0] + tokens_saida * precos[1]) / 1_000_000
 
 
 def titulo(r: Resultado) -> str:
